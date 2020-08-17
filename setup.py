@@ -1,5 +1,9 @@
 import re, io
 from setuptools import setup, find_packages
+import sys
+
+if sys.version_info[0] <= 2:
+    from io import open
 
 # Load version from module (without loading the whole module)
 with open('src/pygetwindow/__init__.py', 'r') as fd:
