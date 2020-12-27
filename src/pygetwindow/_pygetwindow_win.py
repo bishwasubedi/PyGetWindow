@@ -39,6 +39,15 @@ getWindowText = ctypes.windll.user32.GetWindowTextW
 getWindowTextLength = ctypes.windll.user32.GetWindowTextLengthW
 isWindowVisible = ctypes.windll.user32.IsWindowVisible
 
+GetWindowThreadProcessId = ctypes.windll.user32.GetWindowThreadProcessId
+keybd_event = ctypes.windll.user32.keybd_event
+
+VK_MENU = 0x12
+
+KEYEVENTF_KEYDOWN = 0x0
+#KEYEVENTF_EXTENDEDKEY= 0x1
+KEYEVENTF_KEYUP = 0x2
+
 
 class RECT(ctypes.Structure):
     """A nice wrapper of the RECT structure.
@@ -64,9 +73,7 @@ def _getAllTitles():
             titles.append((hWnd, buff.value))
         return True
     enumWindows(enumWindowsProc(foreach_window), 0)
-
     return titles
-
 
 def _formatMessage(errorCode):
     """A nice wrapper for FormatMessageW(). TODO
@@ -91,7 +98,6 @@ def _formatMessage(errorCode):
     ctypes.windll.kernel32.LocalFree(lpBuffer) # Free the memory allocated for the error message's buffer.
     return msg
 
-
 def _raiseWithLastError():
     """A helper function that raises PyGetWindowException using the error
     information from GetLastError() and FormatMessage()."""
@@ -107,7 +113,6 @@ def getActiveWindow():
         return None # Note that this function doesn't use GetLastError().
     else:
         return Win32Window(hWnd)
-
 
 def getActiveWindowTitle():
     """Returns a string of the title text of the currently active (focused) Window."""
@@ -128,9 +133,7 @@ def getActiveWindowTitle():
             activeWindowTitle =  buff.value
         return True
     enumWindows(enumWindowsProc(foreach_window), 0)
-
     return activeWindowTitle
-
 
 def getWindowsAt(x, y):
     """Returns a list of Window objects whose windows contain the point ``(x, y)``.
@@ -143,7 +146,6 @@ def getWindowsAt(x, y):
             windowsAtXY.append(window)
     return windowsAtXY
 
-
 def getWindowsWithTitle(title):
     """Returns a list of Window objects that substring match ``title`` in their title text."""
     hWndsAndTitles = _getAllTitles()
@@ -153,12 +155,10 @@ def getWindowsWithTitle(title):
             windowObjs.append(Win32Window(hWnd))
     return windowObjs
 
-
 def getAllTitles():
     """Returns a list of strings of window titles for all visible windows.
     """
     return [window.title for window in getAllWindows()]
-
 
 def getAllWindows():
     """Returns a list of Window objects for all visible windows.
@@ -239,12 +239,16 @@ class Win32Window(BaseWindow):
         """If hidden or showing, hides the window from screen and title bar."""
         ctypes.windll.user32.ShowWindow(self._hWnd,SW_HIDE)    
 
-    def activate(self):
+    def activate(self, force=True):
         """Activate this window and make it the foreground (focused) window."""
         result = ctypes.windll.user32.SetForegroundWindow(self._hWnd)
         if result == 0:
-            _raiseWithLastError()
-
+            if not force:
+                _raiseWithLastError()                
+            keybd_event(VK_MENU, 0, KEYEVENTF_KEYDOWN, 0)
+            result = ctypes.windll.user32.SetForegroundWindow(self._hWnd)
+            keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
+        return result
 
     def resize(self, widthOffset, heightOffset):
         """Resizes the window relative to its current size."""
@@ -303,6 +307,13 @@ class Win32Window(BaseWindow):
     def visible(self):
         """Return ``True`` if the window is currently visible."""
         return isWindowVisible(self._hWnd)
+
+    @property
+    def processId(self):
+        lpProcessId = ctypes.c_ulong()
+        GetWindowThreadProcessId(
+                self._hWnd, ctypes.byref(lpProcessId))
+        return lpProcessId.value
 
 
 def cursor():

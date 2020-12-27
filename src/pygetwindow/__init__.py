@@ -17,7 +17,7 @@
 # get/click menu (win32: GetMenuItemCount, GetMenuItemInfo, GetMenuItemID, GetMenu, GetMenuItemRect)
 
 
-__version__ = "0.0.8"
+__version__ = "0.1.0"
 
 import sys, collections, pyrect
 
@@ -46,6 +46,7 @@ Size = collections.namedtuple("Size", "width height")
 
 
 class BaseWindow:
+    
     def __init__(self):
         pass
 
@@ -141,6 +142,10 @@ class BaseWindow:
 
     @property
     def visible(self):
+        raise NotImplementedError
+
+    @property
+    def processId(self):
         raise NotImplementedError
 
     # Wrappers for pyrect.Rect object's properties:
@@ -328,8 +333,20 @@ class BaseWindow:
 
 if sys.platform == "darwin":
     # raise NotImplementedError('PyGetWindow currently does not support macOS. If you have Appkit/Cocoa knowledge, please contribute! https://github.com/asweigart/pygetwindow') # TODO - implement mac
-    from ._pygetwindow_macos import *
-
+    #from ._pygetwindow_macos import *
+    from ._pygetwindow_mac import (
+        MacOSWindow,
+        getActiveWindow,
+        getWindowsAt,
+        _getWindowsByTitle as getWindowsWithTitle,
+        _getAllWindows as getAllWindows,
+        getAllTitles,
+    )
+    
+    def getActiveWindowTitle():
+        w = getActiveWindow()
+        return w.title
+    
     Window = MacOSWindow
 elif sys.platform == "win32":
     from ._pygetwindow_win import (
@@ -341,7 +358,7 @@ elif sys.platform == "win32":
         getAllWindows,
         getAllTitles,
     )
-
+    
     Window = Win32Window
 else:
     raise NotImplementedError(
