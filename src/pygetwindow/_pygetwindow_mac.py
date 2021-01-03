@@ -1,22 +1,34 @@
+# pygetwindow: _pygetwindow_mac.py
+
 import Quartz
 import AppKit
 import pygetwindow
 import pyrect
 
 
+def _getWindowList(OnScreenOnly=True):
+    option = Quartz.kCGWindowListExcludeDesktopElements
+    if OnScreenOnly:
+        option = option | Quartz.kCGWindowListOptionOnScreenOnly
+    #else:
+    #    option = option | Quartz.optionAll
+    return Quartz.CGWindowListCopyWindowInfo(option, Quartz.kCGNullWindowID)
 
-def getAllTitles():
-    """Returns a list of strings of window titles for all visible windows.
+
+def getAllTitles(OnScreenOnly=True):
+    """Returns a list of strings of window titles for all (or visible) windows.
     """
     # Source: https://stackoverflow.com/questions/53237278/obtain-list-of-all-window-titles-on-macos-from-a-python-script/53985082#53985082
-    windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    #windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    windows = _getWindowList(OnScreenOnly)
     return ['%s %s' % (win[Quartz.kCGWindowOwnerName], win.get(Quartz.kCGWindowName, '')) for win in windows]
 
 
 def getActiveWindow():
     """Returns a Window object of the currently active Window."""
     # Source: https://stackoverflow.com/questions/5286274/front-most-window-using-cgwindowlistcopywindowinfo
-    windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    #windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    windows = _getWindowList(True)
     for win in windows:
         if win['kCGWindowLayer'] == 0:
             #return '%s %s' % (win[Quartz.kCGWindowOwnerName], win.get(Quartz.kCGWindowName, '')) # Temporary. For now, we'll just return the title of the active window.
@@ -25,7 +37,8 @@ def getActiveWindow():
 
 
 def getWindowsAt(x, y):
-    windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    #windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    windows = _getWindowList(True)
     matches = []
     for win in windows:
         w = win['kCGWindowBounds']
@@ -48,20 +61,22 @@ def activate(title):
 
 def getWindowGeometry(title):
     # TEMP - this is not a real api, I'm just using this name to stoe these notes for now.
-    windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    #windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    windows = _getWindowList()
     for win in windows:
         if title in '%s %s' % (win[Quartz.kCGWindowOwnerName], win.get(Quartz.kCGWindowName, '')):
             w = win['kCGWindowBounds']
             return (w['X'], w['Y'], w['Width'], w['Height'])
-
+    return None
 
 def isVisible(title):
     # TEMP - this is not a real api, I'm just using this name to stoe these notes for now.
-    windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    #windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    windows = _getWindowList()
     for win in windows:
         if title in '%s %s' % (win[Quartz.kCGWindowOwnerName], win.get(Quartz.kCGWindowName, '')):
             return win['kCGWindowAlpha'] != 0.0
-
+    return False
 
 def isMinimized(title):
     # TEMP - this is not a real api, I'm just using this name to stoe these notes for now.
@@ -70,13 +85,15 @@ def isMinimized(title):
     # I'm not sure how kCGWindowListOptionOnScreenOnly interferes with this.
     # https://developer.apple.com/documentation/appkit/nsrunningapplication/1525949-hidden?language=objc
     w = _getWindowsByTitle(title)[0]
-    return w.app.hidden
+    #return w.app.hidden
+    return w.isMinimized
 
 
-def _getAllWindows():
-    """Returns a list of MacOSWindow objects for all visible windows"""
+def _getAllWindows(OnScreenOnly=True):
+    """Returns a list of MacOSWindow objects for all (or visible) windows"""
     matched = []
-    windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    #windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    windows = _getWindowList(OnScreenOnly)
     for win in windows:
         matched.append(MacOSWindow(win['kCGWindowNumber']))
     if len(matched) > 0:
@@ -90,7 +107,8 @@ def _getWindowsByTitle(title, exact=False):
     :param exact: Whether to only return where title is an exact match.
     """
     matched = []
-    windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    #windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+    windows = _getWindowList()
     for win in windows:
         if exact:
             if (title == win[Quartz.kCGWindowOwnerName]) or \
@@ -108,7 +126,8 @@ def _getWindowRect(hWnd):
     # hWnd equivalent in MacOS is CGWindowID
     # https://developer.apple.com/documentation/coregraphics/cgwindowid?language=objc
     # windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
-    windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements, Quartz.kCGNullWindowID)
+    #windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements, Quartz.kCGNullWindowID)
+    windows = _getWindowList(False)
     for win in windows:
         if hWnd == win['kCGWindowNumber']:
             w = win['kCGWindowBounds']
@@ -159,7 +178,8 @@ class MacOSWindow():
 
     def __get_kCGWindow_dict(self):
         """Sets the specific keys returned by Quartz for later re-use"""
-        windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+        #windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+        windows = _getWindowList()
         for win in windows:
             if self._hWnd == win['kCGWindowNumber']:
                 for key, value in win.items():
@@ -171,18 +191,14 @@ class MacOSWindow():
         if self._app:
             return self._app
         else:
-            windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+            #windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements | Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+            windows = _getWindowList()
             for win in windows:
                 if self._hWnd == win['kCGWindowNumber']:
                     ap = AppKit.NSRunningApplication.\
                     runningApplicationWithProcessIdentifier_(win['kCGWindowOwnerPID'])
                     self._app = ap
                     return ap
-
-    @property
-    def isActive(self):
-        return self.app.active
-
 
     def close(self):
         """Closes this window. This may trigger "Are you sure you want to
@@ -199,24 +215,32 @@ class MacOSWindow():
         # https://developer.apple.com/documentation/appkit/nsrunningapplication/1526608-hide?language=objc
         self.app.hide()
 
-
     def maximize(self):
         """Maximizes this window."""
         self.app.unhide()
         self.activate()
-
-
+    
+    
     def restore(self):
         """If maximized or minimized, restores the window to it's normal size."""
+        self.app.unhide()
+    
+    
+    def show(self):
         self.maximize()
-
-
-    def activate(self):
+    
+    def hide(self):
+        self.minimize()
+    
+    
+    def activate(self, force=True):
         """Activate this window and make it the foreground window."""
-        if not self.isActive:
-            self.app.activateWithOptions_(AppKit.NSApplicationActivateIgnoringOtherApps)        
-
-
+        if force or not self.isActive:
+            return self.app.activateWithOptions_(
+                    AppKit.NSApplicationActivateIgnoringOtherApps)
+        return True
+    
+    
     def resizeRel(self, widthOffset, heightOffset):
         """Resizes the window relative to its current size."""
         raise NotImplementedError("Method not implemented in MacOS")
@@ -241,9 +265,11 @@ class MacOSWindow():
     def isMinimized(self):
         """Returns True if the window is currently minimized."""
         try:
-            return self.app.hidden
+            # return self.app.hidden
+            return self.app.isHidden
         except AttributeError:
-            return False
+            pass
+        return None
 
     @property
     def isMaximized(self):
@@ -253,6 +279,11 @@ class MacOSWindow():
     @property
     def isActive(self):
         """Returns True if the window is currently the active, foreground window."""
+        try:
+            # return self.app.active
+            return self.app.isActive
+        except AttributeError:
+            pass
         return getActiveWindow() == self
 
     @property
@@ -262,10 +293,16 @@ class MacOSWindow():
 
     @property
     def visible(self):
-        windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements, Quartz.kCGNullWindowID)
+        #windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements, Quartz.kCGNullWindowID)
+        windows = _getWindowList(False)
         for win in windows:
             if self._hWnd == win[Quartz.kCGWindowNumber]:
                 return win['kCGWindowAlpha'] != 0.0
+        return False
+
+    @property
+    def processId(self):
+        return self.kCGWindowOwnerPID
 
     # Wrappers for pyrect.Rect object's properties.
     @property

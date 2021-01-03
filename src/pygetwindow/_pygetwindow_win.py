@@ -1,3 +1,5 @@
+# pygetwindow: _pygetwindow_win.py
+
 import ctypes
 from ctypes import wintypes # We can't use ctypes.wintypes, we must import wintypes this way.
 
@@ -39,14 +41,19 @@ getWindowText = ctypes.windll.user32.GetWindowTextW
 getWindowTextLength = ctypes.windll.user32.GetWindowTextLengthW
 isWindowVisible = ctypes.windll.user32.IsWindowVisible
 
-GetWindowThreadProcessId = ctypes.windll.user32.GetWindowThreadProcessId
-keybd_event = ctypes.windll.user32.keybd_event
+#LSFW_LOCK = 0x1
+LSFW_UNLOCK = 0x2
+
+LockSetForegroundWindow = ctypes.windll.user32.LockSetForegroundWindow
+SetForegroundWindow = ctypes.windll.user32.SetForegroundWindow
 
 VK_MENU = 0x12
 
 KEYEVENTF_KEYDOWN = 0x0
 #KEYEVENTF_EXTENDEDKEY= 0x1
 KEYEVENTF_KEYUP = 0x2
+
+keybd_event = ctypes.windll.user32.keybd_event
 
 
 class RECT(ctypes.Structure):
@@ -238,18 +245,20 @@ class Win32Window(BaseWindow):
     def hide(self):
         """If hidden or showing, hides the window from screen and title bar."""
         ctypes.windll.user32.ShowWindow(self._hWnd,SW_HIDE)    
-
-    def activate(self, force=True):
+    
+    def activate(self, unlock=True, force=True):
         """Activate this window and make it the foreground (focused) window."""
-        result = ctypes.windll.user32.SetForegroundWindow(self._hWnd)
+        if unlock:
+            LockSetForegroundWindow(LSFW_UNLOCK)
+        result = SetForegroundWindow(self._hWnd)
         if result == 0:
             if not force:
                 _raiseWithLastError()                
             keybd_event(VK_MENU, 0, KEYEVENTF_KEYDOWN, 0)
-            result = ctypes.windll.user32.SetForegroundWindow(self._hWnd)
+            result = SetForegroundWindow(self._hWnd)
             keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
         return result
-
+    
     def resize(self, widthOffset, heightOffset):
         """Resizes the window relative to its current size."""
         result = ctypes.windll.user32.SetWindowPos(self._hWnd, HWND_TOP, self.left, self.top, self.width + widthOffset, self.height + heightOffset, 0)
@@ -311,7 +320,7 @@ class Win32Window(BaseWindow):
     @property
     def processId(self):
         lpProcessId = ctypes.c_ulong()
-        GetWindowThreadProcessId(
+        ctypes.windll.user32.GetWindowThreadProcessId(
                 self._hWnd, ctypes.byref(lpProcessId))
         return lpProcessId.value
 
