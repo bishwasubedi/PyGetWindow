@@ -222,29 +222,29 @@ class Win32Window(BaseWindow):
         result = ctypes.windll.user32.PostMessageA(self._hWnd, WM_CLOSE, 0, 0)
         if result == 0:
             _raiseWithLastError()
-
+        return result
 
     def minimize(self):
         """Minimizes this window."""
-        ctypes.windll.user32.ShowWindow(self._hWnd, SW_MINIMIZE)
+        return ctypes.windll.user32.ShowWindow(self._hWnd, SW_MINIMIZE)
 
 
     def maximize(self):
         """Maximizes this window."""
-        ctypes.windll.user32.ShowWindow(self._hWnd, SW_MAXIMIZE)
+        return ctypes.windll.user32.ShowWindow(self._hWnd, SW_MAXIMIZE)
 
 
     def restore(self):
         """If maximized or minimized, restores the window to it's normal size."""
-        ctypes.windll.user32.ShowWindow(self._hWnd, SW_RESTORE)
+        return ctypes.windll.user32.ShowWindow(self._hWnd, SW_RESTORE)
 
     def show(self):
         """If hidden or showing, shows the window on screen and in title bar."""
-        ctypes.windll.user32.ShowWindow(self._hWnd,SW_SHOW)
+        return ctypes.windll.user32.ShowWindow(self._hWnd,SW_SHOW)
 
     def hide(self):
         """If hidden or showing, hides the window from screen and title bar."""
-        ctypes.windll.user32.ShowWindow(self._hWnd,SW_HIDE)    
+        return ctypes.windll.user32.ShowWindow(self._hWnd,SW_HIDE)    
     
     def activate(self, unlock=True, force=True):
         """Activate this window and make it the foreground (focused) window."""
@@ -254,6 +254,7 @@ class Win32Window(BaseWindow):
         if result == 0:
             if not force:
                 _raiseWithLastError()                
+            # Workaround for FSP in Windows 10.
             keybd_event(VK_MENU, 0, KEYEVENTF_KEYDOWN, 0)
             result = SetForegroundWindow(self._hWnd)
             keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)

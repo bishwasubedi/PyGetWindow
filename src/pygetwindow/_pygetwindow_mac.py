@@ -208,29 +208,28 @@ class MacOSWindow():
         result = self.app.terminate()
         if not result:
             raise Exception("Unable to terminate application")
-
+        return result
 
     def minimize(self):
         """Minimizes this window."""
         # https://developer.apple.com/documentation/appkit/nsrunningapplication/1526608-hide?language=objc
-        self.app.hide()
+        return self.app.hide()
 
     def maximize(self):
         """Maximizes this window."""
-        self.app.unhide()
-        self.activate()
+        return self.app.unhide()
     
     
     def restore(self):
         """If maximized or minimized, restores the window to it's normal size."""
-        self.app.unhide()
+        return self.app.unhide()
     
     
     def show(self):
-        self.maximize()
+        return self.maximize()
     
     def hide(self):
-        self.minimize()
+        return self.minimize()
     
     
     def activate(self, force=True):
